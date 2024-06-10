@@ -100,6 +100,13 @@ Analyzes a given CSP and returns the analysis results and a revised CSP if neces
 #### Returns
 
 - `AnalyzeCspResult`: The result of the CSP analysis, including the original CSP, the analysis results, and the revised CSP if necessary.
+```
+AnalyzeCspResult -> {
+  csp: string;
+  results: { directive: string; status: "pass" | "fail"; missingValues: string[]; }[];
+  revisedCSP: string;
+}
+```
 
 ### `getCspFromMeta`
 
