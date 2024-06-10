@@ -21,7 +21,7 @@ export interface AnalyzeCspResult {
   revisedCSP: string;
 }
 
-declare const getCspAnalysis: ({ csp, hasData360, hasEngage, }: AnalyzeCspOptions) => AnalyzeCspResult;
+declare const getCspAnalysis: ({ csp, hasData360, hasEngage }: AnalyzeCspOptions) => AnalyzeCspResult;
 
 declare const getCspFromMeta: (metaTagEle: HTMLElement, additionalConfig?: {
     hasData360?: boolean;

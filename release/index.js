@@ -200,8 +200,7 @@ var getCspAnalysis = function (_a) {
     };
 };
 exports.getCspAnalysis = getCspAnalysis;
-var getCspFromMeta = function (metaTagEle, additionalConfig) {
-    if (additionalConfig === void 0) { additionalConfig = {}; }
+var getCspFromMeta = function (metaTagEle) {
     var cspContent = "";
     if (metaTagEle &&
         typeof metaTagEle === "object" &&
@@ -219,17 +218,18 @@ var getCspFromLink = function (url_1) {
         args_1[_i - 1] = arguments[_i];
     }
     return __awaiter(void 0, __spreadArray([url_1], args_1, true), void 0, function (url, configObj) {
-        var getCSPFromHeaders, getCSPFromMeta, csp, response, cspFromMeta, e_1;
+        var getCSPFromHeaders, getCSPFromMetaOfCurrentDOM, csp, response, cspFromMeta, e_1;
         if (configObj === void 0) { configObj = {}; }
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     getCSPFromHeaders = function (headers) {
-                        return (headers["content-security-policy"] || headers["Content-Security-Policy"]);
+                        return (headers["content-security-policy"] || headers["Content-Security-Policy"] || "");
                     };
-                    getCSPFromMeta = function (html) {
+                    getCSPFromMetaOfCurrentDOM = function (html) {
                         var $ = (0, cheerio_1.load)(html);
-                        return $('meta[http-equiv="Content-Security-Policy"]').attr("content");
+                        console.log(">> ", $);
+                        return $('meta[http-equiv="Content-Security-Policy"]').attr("content") || "";
                     };
                     csp = "";
                     _a.label = 1;
@@ -238,9 +238,10 @@ var getCspFromLink = function (url_1) {
                     return [4 /*yield*/, axios_1.default.get(url)];
                 case 2:
                     response = _a.sent();
+                    // console.log(">> response: ", response, " \n \n HEADERS: ", response.headers, " \n \n CONTENT: ", response.data);
                     csp = getCSPFromHeaders(response.headers);
                     if (!csp && configObj.metaFallback) {
-                        cspFromMeta = getCSPFromMeta(response.data);
+                        cspFromMeta = getCSPFromMetaOfCurrentDOM(response.data);
                         csp = cspFromMeta || csp;
                     }
                     return [3 /*break*/, 4];

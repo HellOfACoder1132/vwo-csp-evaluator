@@ -17,7 +17,8 @@
   "license": "ISC",
   "files": [
     "release/",
-    "types/"
+    "types/",
+    "README.md"
   ],
   "devDependencies": {
     "@types/chai": "^4.3.16",

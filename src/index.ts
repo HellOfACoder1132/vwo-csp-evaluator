@@ -178,7 +178,6 @@ const getCspAnalysis = ({
 
 const getCspFromMeta = (
   metaTagEle: HTMLElement,
-  additionalConfig: { hasData360?: boolean; hasEngage?: boolean } = {}
 ): string => {
   let cspContent = "";
   if (
@@ -204,20 +203,20 @@ const getCspFromLink = async (
   // Helper function to extract CSP from headers
   const getCSPFromHeaders = (headers: GenericObject) => {
     return (
-      headers["content-security-policy"] || headers["Content-Security-Policy"]
+      headers["content-security-policy"] || headers["Content-Security-Policy"] || ""
     );
   };
   // Helper function to extract CSP from meta tags
-  const getCSPFromMeta = (html: string) => {
+  const getCSPFromMetaOfCurrentDOM = (html: string) => {
     const $ = load(html);
-    return $('meta[http-equiv="Content-Security-Policy"]').attr("content");
+    return $('meta[http-equiv="Content-Security-Policy"]').attr("content") || "";
   };
   let csp: string = "";
   try {
     const response = await axios.get(url);
     csp = getCSPFromHeaders(response.headers);
     if (!csp && configObj.metaFallback) {
-      const cspFromMeta = getCSPFromMeta(response.data);
+      const cspFromMeta = getCSPFromMetaOfCurrentDOM(response.data);
       csp = cspFromMeta || csp;
     }
   } catch (e) {
