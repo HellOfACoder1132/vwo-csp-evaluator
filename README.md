@@ -76,7 +76,7 @@ const url = 'https://example.com';
 const configObj = {
   hasData360: false,
   hasEngage: true,
-  metaFallback: true // Used for extracting CSP from meta tag if no header of the URL had a CSP!
+  metaFallback: true // Used for extracting CSP from meta tag if the CSP header didn't exist on the URL!
 };
 
 getCspFromLink(url, configObj).then(csp => {
