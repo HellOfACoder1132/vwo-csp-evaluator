@@ -228,7 +228,6 @@ var getCspFromLink = function (url_1) {
                     };
                     getCSPFromMetaOfCurrentDOM = function (html) {
                         var $ = (0, cheerio_1.load)(html);
-                        console.log(">> ", $);
                         return $('meta[http-equiv="Content-Security-Policy"]').attr("content") || "";
                     };
                     csp = "";
@@ -238,7 +237,6 @@ var getCspFromLink = function (url_1) {
                     return [4 /*yield*/, axios_1.default.get(url)];
                 case 2:
                     response = _a.sent();
-                    // console.log(">> response: ", response, " \n \n HEADERS: ", response.headers, " \n \n CONTENT: ", response.data);
                     csp = getCSPFromHeaders(response.headers);
                     if (!csp && configObj.metaFallback) {
                         cspFromMeta = getCSPFromMetaOfCurrentDOM(response.data);

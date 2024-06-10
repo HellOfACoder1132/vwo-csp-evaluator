@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "release/index.js",
+  "browser": "release/bundle.js",
   "scripts": {
     "build": "npm run tsc && webpack --config webpack.config.js",
     "test": "npm run build && mocha test/",
@@ -12,7 +13,7 @@
   "keywords": [
     "typescript"
   ],
-  "types": "/types/types.d.ts",
+  "types": "./types/types.d.ts",
   "author": "",
   "license": "ISC",
   "files": [
