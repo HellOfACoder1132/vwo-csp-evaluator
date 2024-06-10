@@ -20,3 +20,18 @@ export interface AnalyzeCspResult {
   results: CspResult[];
   revisedCSP: string;
 }
+
+declare const getCspAnalysis: ({ csp, hasData360, hasEngage, }: AnalyzeCspOptions) => AnalyzeCspResult;
+
+declare const getCspFromMeta: (metaTagEle: HTMLElement, additionalConfig?: {
+    hasData360?: boolean;
+    hasEngage?: boolean;
+}) => string;
+
+declare const getCspFromLink: (url: string, configObj?: {
+    hasData360?: boolean;
+    hasEngage?: boolean;
+    metaFallback?: boolean;
+}) => Promise<string>;
+
+export { getCspFromLink, getCspFromMeta, getCspAnalysis };
