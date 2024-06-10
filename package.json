@@ -2,11 +2,12 @@
   "name": "vwo-csp-evaluator",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "release/index.js",
   "scripts": {
     "build": "npm run tsc && webpack --config webpack.config.js",
     "test": "npm run build && mocha test/",
-    "tsc": "rm -rf dist/ && tsc --project ."
+    "tsc": "rm -rf dist/ && tsc --project .",
+    "publish": "rm -rf release/ && mkdir release && npm run build && mv dist/* release/"
   },
   "keywords": [
     "typescript"

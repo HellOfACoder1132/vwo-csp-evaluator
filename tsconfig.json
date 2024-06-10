@@ -6,7 +6,7 @@
     "lib": ["ES2017", "DOM"],                       /* Specify library files to be included in the compilation. */
     "sourceMap": false,                       /* Create source map files for emitted JavaScript files. */
     "outDir": "./dist",                      /* Redirect output structure to the directory. */
-    "rootDir": ".",                      /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+    "rootDir": "./src",                      /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     "strict": true,                          /* Enable all strict type-checking options. */
     "esModuleInterop": true,                 /* Emit __importStar and __importDefault helpers to support compatibility with non-ESModule environments. */
     "skipLibCheck": true,                    /* Skip type checking all .d.ts files. */
