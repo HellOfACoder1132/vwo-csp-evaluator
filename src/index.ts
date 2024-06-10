@@ -1,18 +1,38 @@
+import axios from "axios";
 import CONSTANTS from "./constants";
-import { AnalyzeCspOptions, AnalyzeCspResult, CspResult, Directives } from "./types/types";
+import {
+  AnalyzeCspOptions,
+  AnalyzeCspResult,
+  CspResult,
+  Directives,
+  GenericObject,
+} from "../types/types";
+import { load } from "cheerio";
 
-function directivesToFormattedCsp(directives: Directives): string {
-  return directives.join(";\n");
-}
+// const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+// const isBrowser = typeof window === "object" && typeof window.document === "object";
 
-export default function analyzeCSP({ csp, hasData360, hasEngage }: AnalyzeCspOptions): AnalyzeCspResult {
+const getCspAnalysis = ({
+  csp,
+  hasData360,
+  hasEngage,
+}: AnalyzeCspOptions): AnalyzeCspResult => {
+  if (!csp) {
+    return { csp: "", results: [], revisedCSP: "" };
+  }
+  const directivesToFormattedCsp = (directives: Directives): string => {
+    return directives.join(";\n");
+  };
   const directives = csp
     .split(";")
     .map((d) => d.trim())
     .filter(Boolean);
 
   const vwoDomains = ["*.visualwebsiteoptimizer.com", "app.vwo.com"];
-  const requiredDirectives: Record<string, (string | { regex: RegExp, value: string })[]> = {
+  const requiredDirectives: Record<
+    string,
+    (string | { regex: RegExp; value: string })[]
+  > = {
     [CONSTANTS.CSP.DIRECTIVES.WORKER_SRC]: ["'self'", "blob:"],
     "style-src": ["'unsafe-inline'", ...vwoDomains],
     "default-src": [],
@@ -31,21 +51,29 @@ export default function analyzeCSP({ csp, hasData360, hasEngage }: AnalyzeCspOpt
   };
 
   if (!hasData360) requiredDirectives["script-src-elem"].push("'unsafe-eval'");
-  if (hasEngage) requiredDirectives["script-src-elem"].push(CONSTANTS.VWO_ENGAGE_CDN);
+  if (hasEngage)
+    requiredDirectives["script-src-elem"].push(CONSTANTS.VWO_ENGAGE_CDN);
 
-  const cspDirectiveMap: Record<string, string[]> = directives.reduce((map, directive) => {
-    const [name, ...values] = directive.split(" ");
-    map[name] = values;
-    return map;
-  }, {} as Record<string, string[]>);
+  const cspDirectiveMap: Record<string, string[]> = directives.reduce(
+    (map, directive) => {
+      const [name, ...values] = directive.split(" ");
+      map[name] = values;
+      return map;
+    },
+    {} as Record<string, string[]>
+  );
 
-  const isDirectivePresent = (directive: string): boolean => !!cspDirectiveMap[directive];
+  const isDirectivePresent = (directive: string): boolean =>
+    !!cspDirectiveMap[directive];
 
   const isPresent: Record<string, boolean> = {
     "script-src-elem": isDirectivePresent("script-src-elem"),
     "script-src": isDirectivePresent("script-src"),
-    "script-src*": isDirectivePresent("script-src") && isDirectivePresent("script-src-elem"),
-    [CONSTANTS.CSP.DIRECTIVES.WORKER_SRC]: isDirectivePresent(CONSTANTS.CSP.DIRECTIVES.WORKER_SRC),
+    "script-src*":
+      isDirectivePresent("script-src") && isDirectivePresent("script-src-elem"),
+    [CONSTANTS.CSP.DIRECTIVES.WORKER_SRC]: isDirectivePresent(
+      CONSTANTS.CSP.DIRECTIVES.WORKER_SRC
+    ),
     "connect-src": isDirectivePresent("connect-src"),
     "frame-src": isDirectivePresent("frame-src"),
     "img-src": isDirectivePresent("img-src"),
@@ -55,11 +83,14 @@ export default function analyzeCSP({ csp, hasData360, hasEngage }: AnalyzeCspOpt
   };
 
   if (!isPresent["script-src-elem"]) {
-    requiredDirectives["script-src"].push(...requiredDirectives["script-src-elem"]);
+    requiredDirectives["script-src"].push(
+      ...requiredDirectives["script-src-elem"]
+    );
   }
 
   if (!isPresent[CONSTANTS.CSP.DIRECTIVES.WORKER_SRC]) {
-    const workerSrcValues = requiredDirectives[CONSTANTS.CSP.DIRECTIVES.WORKER_SRC];
+    const workerSrcValues =
+      requiredDirectives[CONSTANTS.CSP.DIRECTIVES.WORKER_SRC];
     if (isPresent["script-src"]) {
       requiredDirectives["script-src"].push(...workerSrcValues);
     } else if (isPresent["child-src"]) {
@@ -105,7 +136,9 @@ export default function analyzeCSP({ csp, hasData360, hasEngage }: AnalyzeCspOpt
           ? !directiveStr.match(requiredVal.regex)
           : !values.includes(requiredVal)
       ) {
-        missingValues.push((requiredVal as { value: string }).value || requiredVal as string);
+        missingValues.push(
+          (requiredVal as { value: string }).value || (requiredVal as string)
+        );
       }
     }
     if (missingValues.length) isCspValid = false;
@@ -133,11 +166,64 @@ export default function analyzeCSP({ csp, hasData360, hasEngage }: AnalyzeCspOpt
         .map(([directive, values]) => `${directive} ${values.join(" ")}`)
         .join(";\n");
 
-  const formattedCspStr = directivesToFormattedCsp(directives) + (directives.length ? ";" : "");
+  const formattedCspStr =
+    directivesToFormattedCsp(directives) + (directives.length ? ";" : "");
 
   return {
     csp: formattedCspStr,
     results,
     revisedCSP,
   };
-}
+};
+
+const getCspFromMeta = (
+  metaTagEle: HTMLElement,
+  additionalConfig: { hasData360?: boolean; hasEngage?: boolean } = {}
+): string => {
+  let cspContent = "";
+  if (
+    metaTagEle &&
+    typeof metaTagEle === "object" &&
+    "nodeType" in metaTagEle &&
+    "tagName" in metaTagEle
+  ) {
+    // Retrieve the content attribute of the meta tag
+    cspContent = metaTagEle.getAttribute("content") || cspContent;
+  }
+  return cspContent;
+};
+
+const getCspFromLink = async (
+  url: string,
+  configObj: {
+    hasData360?: boolean;
+    hasEngage?: boolean;
+    metaFallback?: boolean;
+  } = {}
+) => {
+  // Helper function to extract CSP from headers
+  const getCSPFromHeaders = (headers: GenericObject) => {
+    return (
+      headers["content-security-policy"] || headers["Content-Security-Policy"]
+    );
+  };
+  // Helper function to extract CSP from meta tags
+  const getCSPFromMeta = (html: string) => {
+    const $ = load(html);
+    return $('meta[http-equiv="Content-Security-Policy"]').attr("content");
+  };
+  let csp: string = "";
+  try {
+    const response = await axios.get(url);
+    csp = getCSPFromHeaders(response.headers);
+    if (!csp && configObj.metaFallback) {
+      const cspFromMeta = getCSPFromMeta(response.data);
+      csp = cspFromMeta || csp;
+    }
+  } catch (e) {
+    return "";
+  }
+  return csp;
+};
+
+export { getCspFromLink, getCspFromMeta, getCspAnalysis };
