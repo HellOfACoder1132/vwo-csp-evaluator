@@ -39,7 +39,7 @@ npm install
 The `getCspAnalysis` function analyzes a given CSP and returns the analysis results and a revised CSP if necessary.
 
 ```javascript
-import { getCspAnalysis } from './path/to/cspProcessor';
+import { getCspAnalysis } from 'vwo-csp-evaluator';
 
 const csp = "default-src 'self'; script-src 'self' 'unsafe-inline';";
 const options = {
@@ -57,7 +57,7 @@ console.log(result);
 The `getCspFromMeta` function retrieves the CSP from a meta tag in the HTML.
 
 ```javascript
-import { getCspFromMeta } from './path/to/cspProcessor';
+import { getCspFromMeta } from 'vwo-csp-evaluator';
 
 // Assuming metaTagEle is an HTMLElement representing the meta tag
 const metaTagEle = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
@@ -70,7 +70,7 @@ console.log(csp);
 The `getCspFromLink` function fetches the CSP from a given URL. If the CSP is not found in the headers, it can optionally fall back to checking the meta tags in the HTML.
 
 ```javascript
-import { getCspFromLink } from './path/to/cspProcessor';
+import { getCspFromLink } from 'vwo-csp-evaluator';
 
 const url = 'https://example.com';
 const configObj = {
