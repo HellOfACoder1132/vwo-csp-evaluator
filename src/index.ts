@@ -8,6 +8,7 @@ import {
   GenericObject,
 } from "../types/types";
 import { load } from "cheerio";
+import { findMessageForDirective } from "./messageHelper";
 
 // const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
 // const isBrowser = typeof window === "object" && typeof window.document === "object";
@@ -50,9 +51,13 @@ const getCspAnalysis = ({
     ],
   };
 
-  if (!hasData360) requiredDirectives["script-src-elem"].push("'unsafe-eval'");
-  if (hasEngage)
+  if (!hasData360) {
+    requiredDirectives["script-src-elem"].push("'unsafe-eval'");
+  }
+  if (hasEngage) {
     requiredDirectives["script-src-elem"].push(CONSTANTS.VWO_ENGAGE_CDN);
+    requiredDirectives["style-src"].push(CONSTANTS.VWO_ENGAGE_CDN);
+  }
 
   const cspDirectiveMap: Record<string, string[]> = directives.reduce(
     (map, directive) => {
@@ -111,7 +116,8 @@ const getCspAnalysis = ({
     isPresent["default-src"] &&
     (!isPresent["img-src"] ||
       !isPresent["connect-src"] ||
-      !isPresent["script-src*"] ||
+      // If neither script-src nor script-src-elem is present, then add the VWO domains to default-src!
+      (!isPresent["script-src"] && !isPresent["script-src-elem"]) ||
       !(isPresent["frame-src"] && isPresent["child-src"]))
   ) {
     requiredDirectives["default-src"].push(...vwoDomains);
@@ -124,28 +130,31 @@ const getCspAnalysis = ({
   let isCspValid = true;
   const results: CspResult[] = directives.map((directive) => {
     const directiveStr = directive.replace("https://", "");
-    const [name, ...values] = directiveStr.split(" ");
-    const requiredValues = requiredDirectives[name];
+    const [directiveName, ...values] = directiveStr.split(" ");
+    const requiredValues = requiredDirectives[directiveName];
     if (!requiredValues || !requiredValues.length) {
-      return { directive: name, status: "pass", missingValues: [] };
+      return { directive: directiveName, status: "pass", missingValues: [] };
     }
     const missingValues: string[] = [];
+    const messageList = [];
     for (const requiredVal of requiredValues) {
       if (
         typeof requiredVal === "object"
           ? !directiveStr.match(requiredVal.regex)
           : !values.includes(requiredVal)
       ) {
-        missingValues.push(
-          (requiredVal as { value: string }).value || (requiredVal as string)
-        );
+        const requiredValue =
+          typeof requiredVal === "object" ? requiredVal.value : requiredVal;
+        missingValues.push(requiredValue);
+        messageList.push([requiredValue, findMessageForDirective(directiveName, requiredValue)]);
       }
     }
     if (missingValues.length) isCspValid = false;
     return {
-      directive: name,
+      directive: directiveName,
       status: missingValues.length === 0 ? "pass" : "fail",
       missingValues,
+      messageList
     };
   });
 
@@ -176,9 +185,7 @@ const getCspAnalysis = ({
   };
 };
 
-const getCspFromMeta = (
-  metaTagEle: HTMLElement,
-): string => {
+const getCspFromMeta = (metaTagEle: HTMLElement): string => {
   let cspContent = "";
   if (
     metaTagEle &&
@@ -203,13 +210,17 @@ const getCspFromLink = async (
   // Helper function to extract CSP from headers
   const getCSPFromHeaders = (headers: GenericObject) => {
     return (
-      headers["content-security-policy"] || headers["Content-Security-Policy"] || ""
+      headers["content-security-policy"] ||
+      headers["Content-Security-Policy"] ||
+      ""
     );
   };
   // Helper function to extract CSP from meta tags
   const getCSPFromMetaOfCurrentDOM = (html: string) => {
     const $ = load(html);
-    return $('meta[http-equiv="Content-Security-Policy"]').attr("content") || "";
+    return (
+      $('meta[http-equiv="Content-Security-Policy"]').attr("content") || ""
+    );
   };
   let csp: string = "";
   try {
