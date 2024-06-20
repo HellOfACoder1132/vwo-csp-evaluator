@@ -63,6 +63,7 @@ exports.getCspAnalysis = exports.getCspFromMeta = exports.getCspFromLink = void 
 var axios_1 = __importDefault(require("axios"));
 var constants_1 = __importDefault(require("./constants"));
 var cheerio_1 = require("cheerio");
+var messageHelper_1 = require("./messageHelper");
 // const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
 // const isBrowser = typeof window === "object" && typeof window.document === "object";
 var getCspAnalysis = function (_a) {
@@ -96,10 +97,13 @@ var getCspAnalysis = function (_a) {
             },
         ],
         _b);
-    if (!hasData360)
+    if (!hasData360) {
         requiredDirectives["script-src-elem"].push("'unsafe-eval'");
-    if (hasEngage)
+    }
+    if (hasEngage) {
         requiredDirectives["script-src-elem"].push(constants_1.default.VWO_ENGAGE_CDN);
+        requiredDirectives["style-src"].push(constants_1.default.VWO_ENGAGE_CDN);
+    }
     var cspDirectiveMap = directives.reduce(function (map, directive) {
         var _a = directive.split(" "), name = _a[0], values = _a.slice(1);
         map[name] = values;
@@ -146,7 +150,8 @@ var getCspAnalysis = function (_a) {
     if (isPresent["default-src"] &&
         (!isPresent["img-src"] ||
             !isPresent["connect-src"] ||
-            !isPresent["script-src*"] ||
+            // If neither script-src nor script-src-elem is present, then add the VWO domains to default-src!
+            (!isPresent["script-src"] && !isPresent["script-src-elem"]) ||
             !(isPresent["frame-src"] && isPresent["child-src"]))) {
         (_h = requiredDirectives["default-src"]).push.apply(_h, vwoDomains);
     }
@@ -156,26 +161,30 @@ var getCspAnalysis = function (_a) {
     var isCspValid = true;
     var results = directives.map(function (directive) {
         var directiveStr = directive.replace("https://", "");
-        var _a = directiveStr.split(" "), name = _a[0], values = _a.slice(1);
-        var requiredValues = requiredDirectives[name];
+        var _a = directiveStr.split(" "), directiveName = _a[0], values = _a.slice(1);
+        var requiredValues = requiredDirectives[directiveName];
         if (!requiredValues || !requiredValues.length) {
-            return { directive: name, status: "pass", missingValues: [] };
+            return { directive: directiveName, status: "pass", missingValues: [] };
         }
         var missingValues = [];
+        var messageList = [];
         for (var _i = 0, requiredValues_1 = requiredValues; _i < requiredValues_1.length; _i++) {
             var requiredVal = requiredValues_1[_i];
             if (typeof requiredVal === "object"
                 ? !directiveStr.match(requiredVal.regex)
                 : !values.includes(requiredVal)) {
-                missingValues.push(requiredVal.value || requiredVal);
+                var requiredValue = typeof requiredVal === "object" ? requiredVal.value : requiredVal;
+                missingValues.push(requiredValue);
+                messageList.push([requiredValue, (0, messageHelper_1.findMessageForDirective)(directiveName, requiredValue)]);
             }
         }
         if (missingValues.length)
             isCspValid = false;
         return {
-            directive: name,
+            directive: directiveName,
             status: missingValues.length === 0 ? "pass" : "fail",
             missingValues: missingValues,
+            messageList: messageList
         };
     });
     var revisedCSPMap = __assign({}, cspDirectiveMap);
@@ -224,11 +233,13 @@ var getCspFromLink = function (url_1) {
             switch (_a.label) {
                 case 0:
                     getCSPFromHeaders = function (headers) {
-                        return (headers["content-security-policy"] || headers["Content-Security-Policy"] || "");
+                        return (headers["content-security-policy"] ||
+                            headers["Content-Security-Policy"] ||
+                            "");
                     };
                     getCSPFromMetaOfCurrentDOM = function (html) {
                         var $ = (0, cheerio_1.load)(html);
-                        return $('meta[http-equiv="Content-Security-Policy"]').attr("content") || "";
+                        return ($('meta[http-equiv="Content-Security-Policy"]').attr("content") || "");
                     };
                     csp = "";
                     _a.label = 1;
