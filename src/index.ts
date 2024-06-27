@@ -234,7 +234,12 @@ const getCspFromLink = async (
       csp = cspFromMeta || csp;
     }
   } catch (e) {
-    return { csp: "", statusCode: response?.status || 500 };
+    if ((e as any)?.message?.includes("Request failed with status code 403")) {
+      statusCode = 403;
+    } else {
+      statusCode = 500;
+    }
+    return { csp: "", statusCode };
   }
   return { csp, statusCode };
 };
