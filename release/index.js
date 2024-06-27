@@ -228,9 +228,10 @@ var getCspFromLink = function (url_1) {
     }
     return __awaiter(void 0, __spreadArray([url_1], args_1, true), void 0, function (url, configObj) {
         var getCSPFromHeaders, getCSPFromMetaOfCurrentDOM, csp, statusCode, response, cspFromMeta, e_1;
+        var _a;
         if (configObj === void 0) { configObj = {}; }
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
                     getCSPFromHeaders = function (headers) {
                         return (headers["content-security-policy"] ||
@@ -243,12 +244,12 @@ var getCspFromLink = function (url_1) {
                     };
                     csp = "";
                     statusCode = 404;
-                    _a.label = 1;
+                    _b.label = 1;
                 case 1:
-                    _a.trys.push([1, 3, , 4]);
+                    _b.trys.push([1, 3, , 4]);
                     return [4 /*yield*/, axios_1.default.get(url)];
                 case 2:
-                    response = _a.sent();
+                    response = _b.sent();
                     csp = getCSPFromHeaders(response.headers);
                     statusCode = response.status;
                     if (!csp && configObj.metaFallback) {
@@ -257,8 +258,14 @@ var getCspFromLink = function (url_1) {
                     }
                     return [3 /*break*/, 4];
                 case 3:
-                    e_1 = _a.sent();
-                    return [2 /*return*/, { csp: "", statusCode: (response === null || response === void 0 ? void 0 : response.status) || 500 }];
+                    e_1 = _b.sent();
+                    if ((_a = e_1 === null || e_1 === void 0 ? void 0 : e_1.message) === null || _a === void 0 ? void 0 : _a.includes("Request failed with status code 403")) {
+                        statusCode = 403;
+                    }
+                    else {
+                        statusCode = 500;
+                    }
+                    return [2 /*return*/, { csp: "", statusCode: statusCode }];
                 case 4: return [2 /*return*/, { csp: csp, statusCode: statusCode }];
             }
         });
