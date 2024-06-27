@@ -32,6 +32,6 @@ declare const getCspFromLink: (url: string, configObj?: {
     hasData360?: boolean;
     hasEngage?: boolean;
     metaFallback?: boolean;
-}) => Promise<string>;
+}) => Promise<{ csp: string; statusCode: number }>;
 
 export { getCspFromLink, getCspFromMeta, getCspAnalysis };
