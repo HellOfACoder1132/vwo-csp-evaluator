@@ -227,7 +227,7 @@ var getCspFromLink = function (url_1) {
         args_1[_i - 1] = arguments[_i];
     }
     return __awaiter(void 0, __spreadArray([url_1], args_1, true), void 0, function (url, configObj) {
-        var getCSPFromHeaders, getCSPFromMetaOfCurrentDOM, csp, response, cspFromMeta, e_1;
+        var getCSPFromHeaders, getCSPFromMetaOfCurrentDOM, csp, statusCode, response, cspFromMeta, e_1;
         if (configObj === void 0) { configObj = {}; }
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -242,6 +242,7 @@ var getCspFromLink = function (url_1) {
                         return ($('meta[http-equiv="Content-Security-Policy"]').attr("content") || "");
                     };
                     csp = "";
+                    statusCode = 404;
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -249,6 +250,7 @@ var getCspFromLink = function (url_1) {
                 case 2:
                     response = _a.sent();
                     csp = getCSPFromHeaders(response.headers);
+                    statusCode = response.status;
                     if (!csp && configObj.metaFallback) {
                         cspFromMeta = getCSPFromMetaOfCurrentDOM(response.data);
                         csp = cspFromMeta || csp;
@@ -256,8 +258,8 @@ var getCspFromLink = function (url_1) {
                     return [3 /*break*/, 4];
                 case 3:
                     e_1 = _a.sent();
-                    return [2 /*return*/, ""];
-                case 4: return [2 /*return*/, csp];
+                    return [2 /*return*/, { csp: "", statusCode: 500 }];
+                case 4: return [2 /*return*/, { csp: csp, statusCode: statusCode }];
             }
         });
     });
