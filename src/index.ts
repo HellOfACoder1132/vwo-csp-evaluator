@@ -206,7 +206,7 @@ const getCspFromLink = async (
     hasEngage?: boolean;
     metaFallback?: boolean;
   } = {}
-) => {
+): Promise<{ csp: string; statusCode: number }> => {
   // Helper function to extract CSP from headers
   const getCSPFromHeaders = (headers: GenericObject) => {
     return (
@@ -223,17 +223,19 @@ const getCspFromLink = async (
     );
   };
   let csp: string = "";
+  let statusCode: number = 404;
   try {
     const response = await axios.get(url);
     csp = getCSPFromHeaders(response.headers);
+    statusCode = response.status;
     if (!csp && configObj.metaFallback) {
       const cspFromMeta = getCSPFromMetaOfCurrentDOM(response.data);
       csp = cspFromMeta || csp;
     }
   } catch (e) {
-    return "";
+    return { csp: "", statusCode: 500 };
   }
-  return csp;
+  return { csp, statusCode };
 };
 
 export { getCspFromLink, getCspFromMeta, getCspAnalysis };
