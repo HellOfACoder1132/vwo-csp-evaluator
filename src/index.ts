@@ -224,8 +224,9 @@ const getCspFromLink = async (
   };
   let csp: string = "";
   let statusCode: number = 404;
+  let response;
   try {
-    const response = await axios.get(url);
+    response = await axios.get(url);
     csp = getCSPFromHeaders(response.headers);
     statusCode = response.status;
     if (!csp && configObj.metaFallback) {
@@ -233,7 +234,7 @@ const getCspFromLink = async (
       csp = cspFromMeta || csp;
     }
   } catch (e) {
-    return { csp: "", statusCode: 500 };
+    return { csp: "", statusCode: response?.status || 500 };
   }
   return { csp, statusCode };
 };
