@@ -258,7 +258,7 @@ var getCspFromLink = function (url_1) {
                     return [3 /*break*/, 4];
                 case 3:
                     e_1 = _a.sent();
-                    return [2 /*return*/, { csp: "", statusCode: 500 }];
+                    return [2 /*return*/, { csp: "", statusCode: (response === null || response === void 0 ? void 0 : response.status) || 500 }];
                 case 4: return [2 /*return*/, { csp: csp, statusCode: statusCode }];
             }
         });
